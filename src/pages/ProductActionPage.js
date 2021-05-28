@@ -1,6 +1,7 @@
 import React, {Component} from "react";
-import callApi from "../utils/ApiCaller";
 import {Link} from "react-router-dom";
+import {connect} from "react-redux";
+import * as actions from "../actions/index";
 
 class ProductActionPage extends Component {
     constructor(props) {
@@ -28,26 +29,20 @@ class ProductActionPage extends Component {
         event.preventDefault();
         var {id, txtCode, txtName, txtDescription, txtPrice, checkboxStatus} = this.state;
         var {history} = this.props;
+        var product = {
+            id : id,
+            code: txtCode,
+            name: txtName,
+            description: txtDescription,
+            price: txtPrice,
+            status: checkboxStatus
+        }
         if (id){ // update
-            callApi(`products/${id}`, "PUT", {
-                code: txtCode,
-                name: txtName,
-                description: txtDescription,
-                price: txtPrice,
-                status: checkboxStatus
-            }).then(response => {
-                history.goBack();
-            });
+            this.props.onUpdateProduct(product);
+            history.goBack();
         } else {
-            callApi("products", "POST", {
-                code: txtCode,
-                name: txtName,
-                description: txtDescription,
-                price: txtPrice,
-                status: checkboxStatus
-            }).then(response => {
-                history.goBack();
-            });
+            this.props.onAddProduct(product);
+            history.goBack();
         }
     };
 
@@ -55,19 +50,23 @@ class ProductActionPage extends Component {
         var {match} = this.props;
         if (match) {
             var id = match.params.id;
-            callApi(`products/${id}`, "GET", null).then(response => {
-                var data = response.data;
-                this.setState({
-                    id: data.id,
-                    txtCode: data.code,
-                    txtName: data.name,
-                    txtDescription: data.description,
-                    txtPrice: data.price,
-                    checkboxStatus: data.status
-                })
-            });
+            this.props.onEditProduct(id);
         }
-    }
+    };
+
+    UNSAFE_componentWillReceiveProps(nextProps) {
+        if (nextProps && nextProps.itemEditing){
+            var {itemEditing} = nextProps;
+            this.setState({
+                id : itemEditing.id,
+                txtCode: itemEditing.code,
+                txtName: itemEditing.name,
+                txtDescription: itemEditing.description,
+                txtPrice: itemEditing.price,
+                checkboxStatus: itemEditing.status
+            })
+        }
+    };
 
     render() {
         var {txtCode, txtName, txtDescription, txtPrice, checkboxStatus} = this.state;
@@ -150,4 +149,24 @@ class ProductActionPage extends Component {
     }
 }
 
-export default ProductActionPage;
+const mapStateToProps = (state) => {
+    return {
+        itemEditing: state.itemEditing
+    }
+}
+
+const mapDispatchToProps = (dispatch, props) => {
+    return {
+        onAddProduct: (product) => {
+            dispatch(actions.actAddProductRequest(product));
+        },
+        onEditProduct: (id) => {
+            dispatch(actions.actEditProductRequest(id));
+        },
+        onUpdateProduct: (product) => {
+            dispatch(actions.actUpdateProductRequest(product));
+        }
+    }
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(ProductActionPage);
