@@ -1,23 +1,54 @@
-import React,{Component} from "react";
+import React, {Component} from "react";
 import Products from "../components/Products";
 import ProductItem from "../components/ProductItem";
 import {connect} from "react-redux";
-import axios from "axios";
+import callApi from "../utils/ApiCaller";
+import {Link} from "react-router-dom";
 
-class ProductPage extends Component{
-    render() {
-        var products = [];
+class ProductPage extends Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+            products: []
+        }
+    };
 
-        axios({
-            method: 'GET',
-            url: 'https://60ab7b4c5a4de40017cca31c.mockapi.io/api/products',
-            data: null
-        }).then(response =>{
-            console.log(response);
-            products = response.data;
-        }).catch(error => {
-            console.log(error);
+    componentDidMount() {
+        callApi("products", "GET", null).then(response => {
+            var products = response.data;
+            this.setState({
+                products: products
+            })
         });
+    };
+
+    onDelete = (id) => {
+        var {products} = this.state;
+        callApi(`products/${id}`, "DELETE", null).then(response => {
+            if (response.status === 200) { // OK
+                var index = this.filterIndex(products, id);
+                if (index !== -1) {
+                    products.splice(index, 1);
+                    this.setState({
+                        products : products
+                    });
+                }
+            }
+        });
+    }
+
+    filterIndex = (products,id) => {
+        var result = -1;
+        products.forEach((product, index) => {
+            if (product.id === id){
+                result = index
+            }
+        });
+        return result;
+    }
+
+    render() {
+        var {products} = this.state;
 
         // var {products} = this.props;
 
@@ -26,7 +57,7 @@ class ProductPage extends Component{
             <div className="container">
                 <div className="row">
                     <div className="col-12 mt-5 mb-3">
-                        <button type="button" className="btn btn-info">Thêm sản phẩm</button>
+                        <Link to="/product/add" className="btn btn-info">Thêm sản phẩm</Link>
                     </div>
                     <Products>
                         {this.showProduct(products)}
@@ -44,6 +75,7 @@ class ProductPage extends Component{
                     <ProductItem key={index}
                                  product={product}
                                  index={index}
+                                 onDelete={this.onDelete}
                     />
                 )
             });
@@ -54,14 +86,12 @@ class ProductPage extends Component{
 
 const mapStateToProps = (state) => {
     return {
-        products : state.products
+        products: state.products
     }
 };
 
 const mapDispatchToProps = (dispatch, props) => {
-    return {
-
-    }
+    return {}
 }
 
 export default connect(mapStateToProps, mapDispatchToProps)(ProductPage);
