@@ -9,8 +9,8 @@ const menus =[
         exact : true
     },
     {
-        name : "Quản Lý Sản Phẩm",
-        to : "/product-management",
+        name : "about",
+        to : "/about",
         exact : false
     }
 ];
